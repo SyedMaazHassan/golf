@@ -1,0 +1,187 @@
+{% extends 'inc/dashboard.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+{% bootstrap_css %}
+{% bootstrap_messages %}
+{% bootstrap_javascript %}
+
+
+{% block title %}Dashboard{% endblock title %}
+
+
+
+{% block content %}
+
+
+<div class="modal" id="booking-modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Booking</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form action="" method="post">
+            
+            {% csrf_token %}
+
+            <div class="modal-body">
+                
+                <h6 class="mb-3">Date: {{ date_to_show }}</h6>
+
+                <div class="row px-2">
+                    <div class="col-sm-6 px-1">
+                        <div class="mb-3 form-floating django_bootstrap5-required">
+                            <input type="hidden" name="bay" id="bay_input_id">
+                            <div class="form-control radius-10" id="bay_text_id"></div>                        
+                            <label class="form-label" for="id_bay">Bay</label>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 px-1">
+                        <div class="mb-3 form-floating django_bootstrap5-required">
+                            <input type="hidden" name="slot" id="slot_input_id">
+                            <div class="form-control radius-10" id="slot_text_id"></div>   
+                            <label class="form-label" for="id_slot">Slot</label>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit booking</button>
+            </div>
+
+        
+        </form>
+
+
+      </div>
+    </div>
+  </div>
+
+<div class="row">
+    <div class="col-xl-8 col-lg-8 col-md-8 col-sm-12 pt-2">
+        <h1 class="h2 mb-0">Bays Selection</h1>
+    </div>
+    
+  
+</div>
+
+<div> 
+    <div>
+        <div class="my-4">
+
+            <div class="row px-2">
+                <div class="col-sm-3 px-1">
+                    <a class="btn {% if bay_type == 'indoor' %}btn-primary active{% else %}btn-outline-primary{% endif %} radius-10 btn-block w-100" href="{% url 'bays' 'indoor' %}" role="button">Indoor</a>
+                </div>
+
+                <div class="col-sm-3  px-1">
+                    <a class="btn {% if bay_type == 'outdoor' %}btn-primary active{% else %}btn-outline-primary{% endif %} radius-10 btn-block w-100" href="{% url 'bays' 'outdoor' %}" role="button">Outdoor</a>
+                </div>
+
+                <div class="col-sm-3">
+
+                </div>
+
+                <div class="col-sm-3 px-1">
+                    <form action="" method="get">
+                        <div class="input-group">
+                            <input type="date" min="{{ today }}" value="{{date}}" name="date" class="form-control mx-2" placeholder="Input group example" aria-label="Input group example" aria-describedby="btnGroupAddon2">
+                            <button type="submit" class="btn btn-primary btn-block">Go</button>    
+                        </div>
+                    </form>
+
+                </div>
+
+                <div class="col-sm-8">
+                    <p class="mt-2 mb-0 d-flex align-items-center my-1">
+                        <i class="material-icons text-danger  mx-1">circle</i> for the slots booked by others</p>
+                    <p class="mb-0 d-flex align-items-center  my-1">
+                        <i class="material-icons text-success mx-1">circle</i> for the slots booked by you</p>
+                
+                </div>
+
+                <div class="col-sm-4 d-flex align-items-center justify-content-end" >
+                    You have  &nbsp; <b>{{ all_user_bookings_count }} / 6</b> &nbsp; Bookings for today
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="grid-container">
+                    {% for bay in bays %}
+                        <div class="grid-item">
+                            <h2 class="mt-3">{{ bay }}</h2>
+                            {% for slot in bay.all_slots %}
+                                <div onclick="book_slot(this)" data-is-booked="{{ slot.is_booked }}" data-bay-id="{{ bay.id }}" data-slot-id="{{ slot.id }}">
+                                    {% if slot.is_booked %}
+                                        <div id="slot_{{ slot.id }}" class="slot text-white {% if slot.is_mine %}bg-success{% else %}bg-danger{% endif %} text-center p-2 py-4">
+                                            {{ slot }}
+                                        </div>
+                                    {% else %}
+                                        <div id="slot_{{ slot.id }}" class="slot text-center p-2 py-4">
+                                            {{ slot }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    
+                    {% endfor %}
+
+                </div>
+
+            
+
+            </div>
+            
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+
+
+    function book_slot(element) {
+        let bay_id = $(element).attr('data-bay-id');
+        let slot_id = $(element).attr('data-slot-id');
+        let is_booked = $(element).attr('data-is-booked');
+        let slot_text = $(`#slot_${slot_id}`).text().trim();
+        if (is_booked == 'True') {
+            alert("This slot has already been booked")
+        }else{
+            // set text
+            $("#bay_text_id").text(`Bay # ${bay_id}`);
+            $("#slot_text_id").text(`${slot_text}`);
+
+            $("#bay_input_id").val(`${bay_id}`);
+            $("#slot_input_id").val(`${slot_id}`);
+
+            $("#booking-modal").modal('show');
+        }   
+    }
+
+    let move_to = '{{ request.GET.slot_id }}';
+    var targetDiv = document.getElementById(move_to);
+    var yOffset = -100; // Adjust this value to offset for fixed headers, etc.
+    var y = targetDiv.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({top: y, behavior: 'smooth'});
+
+    // Highlight the target div
+    targetDiv.classList.add('div-highlight');
+    setTimeout(function() {
+        targetDiv.classList.remove('div-highlight');
+    }, 1000);
+
+
+</script>
+
+
+
+{% endblock content %}
