@@ -9,7 +9,8 @@ from datetime import datetime, date, timedelta
 from django.db.models import Q
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-
+import json
+from django.db import transaction
 
 def run_cron_job():
     yesterday = date.today() - timedelta(days=1)
@@ -58,6 +59,77 @@ def my_bookings_view(request):
     return render(request, "bookings.html", context)
 
 
+def submit_bookings(request):
+    output = {'status': True, 'msg': None}
+    if not request.user.is_authenticated:
+        output['msg'] = 'User is not authenticated'
+        output['status'] = False
+        return JsonResponse(output)
+
+
+    data = request.GET.get('data')
+    date_filter = request.GET.get('date')
+    bay_type = request.GET.get('bay_type')
+    today = date.today()
+    if date_filter:
+        my_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+    else:
+        my_date = timezone.now().date()
+    data = json.loads(data)
+
+    # Fetching user bookings
+    all_user_bookings = Booking.objects.filter(user = request.user, date = my_date).exclude(status='cancelled')
+    all_user_bookings_count = all_user_bookings.count()
+
+
+    try:
+        with transaction.atomic():
+            for booking in data:
+                slot = booking['slot_id']
+                bay = booking['bay_id']
+            
+                slot_object = Slot.objects.filter(id = slot).first()
+                bay_object = Bay.objects.filter(id = bay).first()
+
+                if slot_object and bay_object and slot_object.bay == bay_object:
+                    checking_booking = Booking.objects.filter(date = my_date, slot = slot_object, status='booked').exists()
+                    if checking_booking:
+                        messages.error(request, "This slot has already been booked!")
+                        return redirect("bays", bay_type=bay_type)
+                    
+                    # Second check if user has already booked 6 slots for a perticular day
+                    if all_user_bookings_count == 6:
+                        messages.error(request, f"Booking limit (6 bookings) reached for the date {my_date}, Kindly select any other date!")
+                        return redirect("bays", bay_type=bay_type)
+
+                    # Create booking
+                    new_booking = Booking(
+                        user = request.user,
+                        slot = slot_object,
+                        date = my_date
+                    )
+
+                    try:
+                        new_booking.validate_date_and_time()
+                        new_booking.save()
+                        output['status'] = True
+                        output['msg'] = 'Selected slot(s) booked successfully'
+                        print(new_booking, "created")
+
+                    except Exception as e:
+
+                        output['msg'] = str(e)
+                        output['status'] = False
+                        return JsonResponse(output)
+                    
+    except Exception as e:
+        output['msg'] = str(e)
+        output['status'] = False
+        return JsonResponse(output)
+
+    return JsonResponse(output)
+
+
 @login_required
 def bays_view(request, bay_type):
     if bay_type not in ['indoor', 'outdoor']:
@@ -67,58 +139,18 @@ def bays_view(request, bay_type):
     run_cron_job()
 
     date_filter = request.GET.get('date')
+    today = date.today()
     if date_filter:
         my_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
     else:
         my_date = timezone.now().date()
-    input_type = my_date.strftime('%Y-%m-%d')
+
     all_user_bookings = Booking.objects.filter(user = request.user, date = my_date).exclude(status='cancelled')
     all_user_bookings_count = all_user_bookings.count()
-
-    if request.method == 'POST':
-        slot = request.POST.get('slot')
-        bay = request.POST.get('bay')
-        if slot and bay:
-            slot_object = Slot.objects.filter(id = slot).first()
-            bay_object = Bay.objects.filter(id = bay).first()
-
-            if slot_object and bay_object and slot_object.bay == bay_object:
-                checking_booking = Booking.objects.filter(date = my_date, slot = slot_object, status='booked').exists()
-                if checking_booking:
-                    messages.error(request, "This slot has already been booked!")
-                    return redirect("bays", bay_type=bay_type)
-                
-                # Second check if user has already booked 6 slots for a perticular day
-                if all_user_bookings_count == 6:
-                    messages.error(request, f"Booking limit (6 bookings) reached for the date {my_date}, Kindly select any other date!")
-                    return redirect("bays", bay_type=bay_type)
-
-                # Create booking
-                new_booking = Booking(
-                    user = request.user,
-                    slot = slot_object,
-                    date = my_date
-                )
-                try:
-                    new_booking.validate_date_and_time()
-                    new_booking.save()
-
-                    print(new_booking, "created")
-                    messages.success(request, "Slot has been booked successfully!")
-                    return redirect("my-bookings")
-
-                except Exception as e:
-                    messages.error(request, str(e))
-                    return redirect("bays", bay_type=bay_type)
-            
-        else:
-            messages.error(request, "Invalid input")
-            return redirect("bays", bay_type=bay_type)
-
         
     context = {
-        'today': date.today().strftime('%Y-%m-%d'),
-        'date': input_type,
+        'today': today.strftime('%Y-%m-%d'),
+        'date': my_date.strftime('%Y-%m-%d'),
         'date_to_show': my_date,
         'page': 'bays',
         'bay_type': bay_type,
@@ -132,10 +164,15 @@ def bays_view(request, bay_type):
 
     all_booking_list_format = all_bookings.values_list('slot_id', flat=True)
     only_user_bookings_list_format = only_user_bookings.values_list('slot_id', flat=True)
-
+    current_time = timezone.now().time()
     for bay in all_bays:
         bay.all_slots = all_slots.filter(bay = bay)
         for slot in bay.all_slots:
+            if my_date > today or current_time < slot.start_time:
+                slot.is_slot_available = True
+            else:
+                slot.is_slot_available = False
+
             if slot.id in all_booking_list_format:
                 slot.is_booked = True
                 slot.is_mine = False
@@ -150,4 +187,3 @@ def bays_view(request, bay_type):
 @login_required
 def home_view(request):
     return redirect("bays", bay_type="indoor")
-    return render(request, "home.html")

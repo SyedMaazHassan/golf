@@ -12,7 +12,19 @@
         data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon text-dark" style="color: black !important;"></span>
     </button>
+    <div class="d-flex align-items-center w-100">
+        <div id="selected-container" style="display:none !important" class="w-100 mb-0 px-3">
+            <div class="d-flex align-items-center">
+                <h4 class="my-0"><span id="selected-slot-qty">0</span> slots selected</h4>
+                <button type="button" class="btn btn-secondary mx-3" onclick="confirm_booking_modal()">Confirm</button>
+
+            </div>
+            
+        </div>
+    </div>
+  
     <form action="" method="GET" class="w-100 mb-0 d-flex align-items-center">
+
         <input class="form-control form-control-secondary w-100" style="border-radius: 0px !important;" type="text"
             placeholder="" value="{{request.GET.query}}" aria-label="Search" name="query" required readonly >
     </form>

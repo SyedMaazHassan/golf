@@ -21,43 +21,45 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <form action="" method="post">
+
+
+        <div class="modal-body">
             
-            {% csrf_token %}
+            <h6 class="mb-3 text-primary">Date: {{ date_to_show }}</h6>
 
-            <div class="modal-body">
-                
-                <h6 class="mb-3">Date: {{ date_to_show }}</h6>
+            <p id="response-msg" class="fs-6" style="display:none">Slot have bveen selected</p>
 
-                <div class="row px-2">
-                    <div class="col-sm-6 px-1">
-                        <div class="mb-3 form-floating django_bootstrap5-required">
-                            <input type="hidden" name="bay" id="bay_input_id">
-                            <div class="form-control radius-10" id="bay_text_id"></div>                        
-                            <label class="form-label" for="id_bay">Bay</label>
-                        </div>
-                    </div>
+            <div class="border radius-10">
 
-                    <div class="col-sm-6 px-1">
-                        <div class="mb-3 form-floating django_bootstrap5-required">
-                            <input type="hidden" name="slot" id="slot_input_id">
-                            <div class="form-control radius-10" id="slot_text_id"></div>   
-                            <label class="form-label" for="id_slot">Slot</label>
-                        </div>
-                    </div>
-                </div>
+
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>S no.</th>
+                            <th scope="col">Bay</th>
+                            <th scope="col">Slot</th>
+                        </tr>
+                        </thead>
+                        <tbody id="slots-list">
+
+                        
+                            
+                        
+                        </tbody>
+                    </table>
 
 
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Submit booking</button>
-            </div>
 
-        
-        </form>
 
+
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" onclick="submit_bookings()" class="btn btn-primary">Submit booking</button>
+        </div>
 
       </div>
     </div>
@@ -91,7 +93,7 @@
                 <div class="col-sm-3 px-1">
                     <form action="" method="get">
                         <div class="input-group">
-                            <input type="date" min="{{ today }}" value="{{date}}" name="date" class="form-control mx-2" placeholder="Input group example" aria-label="Input group example" aria-describedby="btnGroupAddon2">
+                            <input type="date" min="{{ today }}" value="{{date}}" name="date" id="my_date" class="form-control mx-2" placeholder="Input group example" aria-label="Input group example" aria-describedby="btnGroupAddon2">
                             <button type="submit" class="btn btn-primary btn-block">Go</button>    
                         </div>
                     </form>
@@ -107,7 +109,7 @@
                 </div>
 
                 <div class="col-sm-4 d-flex align-items-center justify-content-end" >
-                    You have  &nbsp; <b>{{ all_user_bookings_count }} / 6</b> &nbsp; Bookings for today
+                    You have made &nbsp; <b>{{ all_user_bookings_count }} / 6</b> &nbsp; Bookings for today
                 </div>
             </div>
 
@@ -117,14 +119,18 @@
                         <div class="grid-item">
                             <h2 class="mt-3">{{ bay }}</h2>
                             {% for slot in bay.all_slots %}
-                                <div onclick="book_slot(this)" data-is-booked="{{ slot.is_booked }}" data-bay-id="{{ bay.id }}" data-slot-id="{{ slot.id }}">
+                                <div onclick="book_slot(this)" data-is-slot-available="{{ slot.is_slot_available }}" data-is-booked="{{ slot.is_booked }}" data-bay-id="{{ bay.id }}" data-slot-id="{{ slot.id }}">
                                     {% if slot.is_booked %}
                                         <div id="slot_{{ slot.id }}" class="slot text-white {% if slot.is_mine %}bg-success{% else %}bg-danger{% endif %} text-center p-2 py-4">
                                             {{ slot }}
                                         </div>
                                     {% else %}
                                         <div id="slot_{{ slot.id }}" class="slot text-center p-2 py-4">
-                                            {{ slot }}
+                                            {% if slot.is_slot_available %}
+                                                {{ slot }}
+                                            {% else %}
+                                                <s style="opacity: 0.4">{{ slot }}</s>
+                                            {% endif %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -145,27 +151,149 @@
 </div>
 
 
+
+
 <script>
+
+    var selectedSlots = [];
+    var bookings_count = parseInt('{{ all_user_bookings_count }}');
+    var max_bookings = 6;
+    var is_allowed = true;
+    if (max_bookings - bookings_count == 0) {
+        is_allowed = false;
+    }
+
+
+
+    function confirm_booking_modal() {
+        $("#response-msg").hide();
+        $("#slots-list").children().remove();
+        for (let i = 0; i < selectedSlots.length; i++) {
+            const slot = selectedSlots[i];
+            $("#slots-list").append(
+                `<tr>
+                    <td>${i+1}</td>
+                    <td>Bay # ${slot.bay_id}</td>
+                    <td>${slot.slot_text}</td>        
+                </tr>`
+            )
+            
+        }
+
+
+        $("#booking-modal").modal("show");
+    }
+
+
+    
 
 
     function book_slot(element) {
         let bay_id = $(element).attr('data-bay-id');
         let slot_id = $(element).attr('data-slot-id');
         let is_booked = $(element).attr('data-is-booked');
+        let is_slot_available = $(element).attr('data-is-slot-available');
         let slot_text = $(`#slot_${slot_id}`).text().trim();
+
+
+
         if (is_booked == 'True') {
             alert("This slot has already been booked")
+        }
+        else if(is_slot_available == 'False'){
+            alert("Slot from past can't be booked")
         }else{
-            // set text
-            $("#bay_text_id").text(`Bay # ${bay_id}`);
-            $("#slot_text_id").text(`${slot_text}`);
 
-            $("#bay_input_id").val(`${bay_id}`);
-            $("#slot_input_id").val(`${slot_id}`);
+            var slotExists = selectedSlots.some(function(slot) {
+                return slot.slot_id != slot_id && slot.slot_text === slot_text;
+            });
 
-            $("#booking-modal").modal('show');
+            if (slotExists) {
+                let msg =  `${slot_text} can't be selected since other bay booked for the same time.`
+                alert(msg);
+                return;
+            }
+
+
+            // Check if the slot is already selected
+            var selectedSlotIndex = selectedSlots.findIndex(function(slot) {
+                return slot.slot_id === slot_id && slot.bay_id === bay_id && slot.slot_text === slot_text;
+            });
+            
+            if (selectedSlotIndex === -1) {
+                // Slot is not selected, add it to the selectedSlots list
+
+                if (!is_allowed) {
+                    alert("You have reached maximum daily bookings limit");
+                    return;
+                }
+
+                selectedSlots.push({
+                    slot_id: slot_id,
+                    bay_id: bay_id,
+                    slot_text: slot_text
+                });
+
+                $(element).addClass('slot-selected');
+
+            } else {
+
+
+
+                // Slot is already selected, remove it from the selectedSlots list
+                selectedSlots.splice(selectedSlotIndex, 1);
+                $(element).removeClass('slot-selected');
+
+            }
+
+            let length = selectedSlots.length;
+            $("#selected-slot-qty").text(length);
+            if (length == 0) {
+                $("#selected-container").hide();  
+            }else{
+                $("#selected-container").show();                
+            }
+
+            let remaining_bookings = max_bookings - (bookings_count + length);
+            if (remaining_bookings < 1) {
+                is_allowed = false;
+            }
         }   
     }
+
+
+
+    function submit_bookings() {
+
+        $("#loader-booking").show();
+        $("#text-booking").hide();
+        let my_date = $("#my_date").val();
+        $.ajax({
+            "url": "{% url 'submit_bookings' %}",
+            "type": "GET",
+            "data": {
+                'data': JSON.stringify(selectedSlots), 
+                'date': my_date,
+                'bay_type': '{{bay_type}}'
+            },
+            "success": (response)=>{
+                $("#response-msg").text(response.msg);
+                if (response.status) {
+                    $("#response-msg").addClass("text-success");
+                    $("#response-msg").removeClass("text-danger");
+                    $("#response-msg").show();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                }else{
+                    $("#response-msg").addClass("text-danger");
+                    $("#response-msg").removeClass("text-success");
+                    $("#response-msg").show();
+                }
+            }
+        })
+    }
+
 
     let move_to = '{{ request.GET.slot_id }}';
     var targetDiv = document.getElementById(move_to);

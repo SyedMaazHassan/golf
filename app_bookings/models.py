@@ -58,8 +58,13 @@ class Booking(models.Model):
         if self.date < date.today():
             raise ValidationError("Booking date cannot be in the past.")
 
-        if timezone.make_aware(datetime.combine(self.date, self.slot.end_time)) < timezone.now():
+        # convert timezone.now() to a naive datetime object in the local timezone
+        now_local = timezone.now().astimezone(timezone.get_current_timezone()).replace(tzinfo=None)
+
+        if datetime.combine(self.date, self.slot.start_time) < now_local:
             raise ValidationError("Booking slot end time cannot be in the past.")
+
+
 
     def __str__(self):
         return f'{self.date} / Bay # {self.slot.bay} / {self.slot} (By {self.user})'
