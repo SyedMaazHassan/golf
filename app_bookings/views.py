@@ -11,6 +11,9 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 import json
 from django.db import transaction
+from django.conf import settings
+
+max_booking_limit = settings.MAX_BOOKING_LIMIT
 
 def run_cron_job():
     yesterday = date.today() - timedelta(days=1)
@@ -60,6 +63,7 @@ def my_bookings_view(request):
 
 
 def submit_bookings(request):
+
     output = {'status': True, 'msg': None}
     if not request.user.is_authenticated:
         output['msg'] = 'User is not authenticated'
@@ -98,8 +102,8 @@ def submit_bookings(request):
                         return redirect("bays", bay_type=bay_type)
                     
                     # Second check if user has already booked 6 slots for a perticular day
-                    if all_user_bookings_count == 6:
-                        messages.error(request, f"Booking limit (6 bookings) reached for the date {my_date}, Kindly select any other date!")
+                    if all_user_bookings_count == max_booking_limit:
+                        messages.error(request, f"Booking limit ({max_booking_limit} bookings) reached for the date {my_date}, Kindly select any other date!")
                         return redirect("bays", bay_type=bay_type)
 
                     # Create booking
@@ -154,7 +158,8 @@ def bays_view(request, bay_type):
         'date_to_show': my_date,
         'page': 'bays',
         'bay_type': bay_type,
-        'all_user_bookings_count': all_user_bookings_count
+        'all_user_bookings_count': all_user_bookings_count,
+        'max_booking_limit': max_booking_limit
     }
 
     all_bays = Bay.objects.filter(type = bay_type)

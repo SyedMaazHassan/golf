@@ -169,3 +169,6 @@ ANSWERS_CHOICES = [
     ("Agree", "Agree"),
     ("Strongly agree", "Strongly agree")     
 ]
+
+
+MAX_BOOKING_LIMIT = 3

@@ -4,6 +4,56 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserForm
+import csv
+from django.db import transaction
+from django.contrib.auth.models import User
+
+@login_required
+def create_bulk_users(request):
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to import users")
+        return redirect("home")
+
+    if request.POST:
+        csv_file = request.FILES['user-csv-file']
+        if csv_file:
+            csv_reader = csv.reader(csv_file.read().decode('utf-8').splitlines())
+            header = next(csv_reader)
+
+            try:
+                with transaction.atomic():
+                    # Process each row in the CSV file
+                    for row in csv_reader:
+                        # Access data for each column in the row
+                        member_id = row[0]
+                        first_name = row[1]
+                        last_name = row[2]
+                        email = row[3]
+                        password = row[4]
+                        is_staff = row[5]
+
+                        print(f"Member ID: {member_id}, First Name: {first_name}, Last Name: {last_name}, Email: {email}, Password: {password}, Is Staff: {is_staff}")
+
+                        # User creation
+                        new_user = User.objects.create(
+                            username = member_id,
+                            email = email,
+                            first_name = first_name,
+                            last_name = last_name,
+                            password = password,
+                            is_staff = is_staff
+                        )
+                        print(new_user)
+
+                    messages.success(request, "Users have been imported successfully!")
+
+            except Exception as e:
+                messages.error(request, str(e))
+
+    context = {
+        'page': 'import-users'
+    }
+    return render(request, "import_users.html", context)
 
 
 @login_required

@@ -59,6 +59,21 @@
                 </a>
             </li>
 
+            {% if user.is_superuser %}
+            <li class="nav-item" title="Profile">
+                <a class="nav-link {% if page == 'import-users' %} active bg-primary text-white{% endif %}"
+                    href="{% url 'import-users' %}">
+                    <div class="d-flex align-items-center">
+                        <span class="material-icons" style="font-size: 20px;">
+                            group
+                        </span>
+                        <span class="mx-2">Import users</span>
+            
+                    </div>
+                </a>
+            </li>
+            {% endif %}
+
 
 
             
