@@ -8,9 +8,10 @@ import csv
 from django.db import transaction
 from django.contrib.auth.models import User
 
+
 @login_required
 def create_bulk_users(request):
-    if not request.user.is_superuser:
+    if not request.user.is_superuser and not request.user.is_staff:
         messages.error(request, "You don't have permission to import users")
         return redirect("home")
 
