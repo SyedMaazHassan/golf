@@ -108,8 +108,14 @@
                 
                 </div>
 
-                <div class="col-sm-4 d-flex align-items-center justify-content-end" >
-                    You have made &nbsp; <b>{{ all_user_bookings_count }} / {{max_booking_limit}}</b> &nbsp; Bookings for today
+                <div class="col-sm-4 pt-3" >
+                    
+                    {% if user.is_superuser or user.is_staff %}
+                        You have made &nbsp; <b>{{ all_user_bookings_count }}</b> &nbsp; Bookings for today <br>
+                        <span class="text-success">Admin can book as many slots as required!</span>
+                    {% else %}
+                        You have made &nbsp; <b>{{ all_user_bookings_count }} / {{max_booking_limit}}</b> &nbsp; Bookings for today
+                    {% endif %}
                 </div>
             </div>
 
@@ -157,7 +163,7 @@
     var is_staff = JSON.parse('{{ is_staff }}');
     var selectedSlots = [];
     var bookings_count = parseInt('{{ all_user_bookings_count }}');
-    var max_bookings = 6;
+    var max_bookings = parseInt('{{max_booking_limit}}');
     var is_allowed = true;
     if (max_bookings - bookings_count == 0) {
         is_allowed = false;
@@ -223,7 +229,7 @@
             if (selectedSlotIndex === -1) {
                 // Slot is not selected, add it to the selectedSlots list
 
-                if (!is_allowed) {
+                if (!is_allowed && !is_staff) {
                     alert("You have reached maximum daily bookings limit");
                     return;
                 }
@@ -255,7 +261,7 @@
             }
 
             let remaining_bookings = max_bookings - (bookings_count + length);
-            if (remaining_bookings < 1) {
+            if (remaining_bookings < 1 && !is_staff) {
                 is_allowed = false;
             }
         }   

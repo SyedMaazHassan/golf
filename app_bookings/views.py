@@ -116,13 +116,15 @@ def submit_bookings(request):
                 if slot_object and bay_object and slot_object.bay == bay_object:
                     checking_booking = Booking.objects.filter(date = my_date, slot = slot_object, status='booked').exists()
                     if checking_booking:
-                        messages.error(request, "This slot has already been booked!")
-                        return redirect("bays", bay_type=bay_type)
+                        output['msg'] = "This slot has already been booked!"
+                        output['status'] = False
+                        return JsonResponse(output)
                     
                     # Second check if user has already booked 6 slots for a perticular day
-                    if all_user_bookings_count == max_booking_limit:
-                        messages.error(request, f"Booking limit ({max_booking_limit} bookings) reached for the date {my_date}, Kindly select any other date!")
-                        return redirect("bays", bay_type=bay_type)
+                    if all_user_bookings_count == max_booking_limit:                    
+                        output['msg'] = f"Booking limit ({max_booking_limit} bookings) reached for the date {my_date}, Kindly select any other date!"
+                        output['status'] = False
+                        return JsonResponse(output)
 
                     # Create booking
                     new_booking = Booking(
