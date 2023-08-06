@@ -6,7 +6,7 @@
 {% bootstrap_javascript %}
 
 
-{% block title %}Dashboard{% endblock title %}
+{% block title %}My Bookings{% endblock title %}
 
 
 
@@ -81,7 +81,8 @@
 
                                         </td>
                                         <td class="py-3">
-                                            <a href="{% url 'single-booking' booking.id %}" class="link-text">View</a>
+                                            <a href="{% url 'single-booking' booking.id %}" class="text-success text-decoration-none">View</a>
+                                            <a href="{% url 'delete-booking' booking.id %}" onclick="return confirm('Are you sure you want to delete BOOKING # {{booking.id}}?')" class="mx-2 text-danger text-decoration-none">Delete</a>
                                         </td>
                                     </tr>
                                 {% endfor %}

@@ -30,6 +30,7 @@ def run_cron_job():
         print("Not running")
 
 
+
 @login_required
 def go_to_booking(request, booking_id):
     booking = Booking.objects.filter(id = booking_id).first()
@@ -46,13 +47,30 @@ def go_to_booking(request, booking_id):
     return redirect(absolute_url)
 
 
+
+@login_required
+def delete_booking(request, booking_id):
+    booking = Booking.objects.filter(id = booking_id).first()    
+    if not booking:
+        return redirect("bays", bay_type="indoor")
+    
+    if booking.user == request.user:
+        booking.delete()
+        messages.success(request, "Booking has been deleted successfully!")
+    else:
+        messages.error(request, "You don't have permission to delete this booking!")
+
+    return redirect("my-bookings")
+
+
+
 @login_required
 def my_bookings_view(request):
     context = {
         'page':'bookings'
     }
     bookings = Booking.objects.filter(user = request.user)
-    
+
     date_filter = request.GET.get('date')
     if date_filter:
         my_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
@@ -62,8 +80,8 @@ def my_bookings_view(request):
     return render(request, "bookings.html", context)
 
 
-def submit_bookings(request):
 
+def submit_bookings(request):
     output = {'status': True, 'msg': None}
     if not request.user.is_authenticated:
         output['msg'] = 'User is not authenticated'
