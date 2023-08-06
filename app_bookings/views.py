@@ -151,8 +151,12 @@ def bays_view(request, bay_type):
 
     all_user_bookings = Booking.objects.filter(user = request.user, date = my_date).exclude(status='cancelled')
     all_user_bookings_count = all_user_bookings.count()
-        
+    current_user = request.user
+
+
+
     context = {
+        'is_staff': json.dumps(current_user.is_superuser or current_user.is_staff),
         'today': today.strftime('%Y-%m-%d'),
         'date': my_date.strftime('%Y-%m-%d'),
         'date_to_show': my_date,

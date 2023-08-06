@@ -154,7 +154,7 @@
 
 
 <script>
-
+    var is_staff = JSON.parse('{{ is_staff }}');
     var selectedSlots = [];
     var bookings_count = parseInt('{{ all_user_bookings_count }}');
     var max_bookings = 6;
@@ -208,7 +208,7 @@
                 return slot.slot_id != slot_id && slot.slot_text === slot_text;
             });
 
-            if (slotExists) {
+            if (slotExists && !is_staff) {
                 let msg =  `${slot_text} can't be selected since other bay booked for the same time.`
                 alert(msg);
                 return;
