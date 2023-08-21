@@ -81,8 +81,17 @@
 
                                         </td>
                                         <td class="py-3">
-                                            <a href="{% url 'single-booking' booking.id %}" class="text-success text-decoration-none">View</a>
-                                            <a href="{% url 'delete-booking' booking.id %}" onclick="return confirm('Are you sure you want to delete BOOKING # {{booking.id}}?')" class="mx-2 text-danger text-decoration-none">Delete</a>
+                                            <div class="row">
+                                                <div class="col-sm-2">
+                                                    {% if booking.status == 'booked' %}
+                                                        <a href="{% url 'single-booking' booking.id %}" class="text-success text-decoration-none">View</a>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-sm-2">
+                                                    <a href="{% url 'delete-booking' booking.id %}" onclick="return confirm('Are you sure you want to delete BOOKING # {{booking.id}}?')" class="mx-2 text-danger text-decoration-none">Delete</a>
+                                                </div>
+                                            </div>
+
                                         </td>
                                     </tr>
                                 {% endfor %}
