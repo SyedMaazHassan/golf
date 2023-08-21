@@ -208,8 +208,10 @@ def bays_view(request, bay_type):
                 if slot.id in only_user_bookings_list_format:
                     slot.is_mine = True
     
-
     context["bays"] = all_bays
+    context["all_bays"] = all_bays
+    context["slot_header"] = all_bays[0].all_slots
+    
     return render(request, "bays.html", context)
 
 

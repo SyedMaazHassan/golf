@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from datetime import time, timedelta, datetime, date
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 
 # python manage.py makemigrations
@@ -16,6 +18,7 @@ class CronJob(models.Model):
 
 
 class Bay(models.Model):
+    number = models.IntegerField(null=True, blank=True, unique=True)
     start_service_time = models.TimeField(default=time(9, 0))
     end_service_time = models.TimeField(default=time(17, 0))
     type = models.CharField(max_length=10, choices=[('indoor', 'Indoor'), ('outdoor', 'Outdoor')])
@@ -25,7 +28,14 @@ class Bay(models.Model):
         return all_slots
 
     def __str__(self):
-        return f'{self.pk}'
+        return f'{self.number}'
+
+
+@receiver(post_save, sender=Bay)
+def set_number_on_create(sender, instance, created, **kwargs):
+    if created and not instance.number:
+        instance.number = instance.id
+        instance.save()
 
 
 class Slot(models.Model):

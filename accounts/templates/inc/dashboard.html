@@ -156,21 +156,21 @@
         }
 
         .grid-container {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 0px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0px;
         }
 
         .grid-item {
-        background-color: #f2f2f2;
-        padding: 0px;
-        text-align: center;
-        border: solid 1px rgb(230, 230, 230);
+            background-color: #f2f2f2;
+            padding: 0px;
+            text-align: center;
+            border: solid 1px rgb(230, 230, 230);
         }
 
         .slot{
             transition-duration: 0.5s;
-            border: solid 1px rgb(230, 230, 230);
+            border: solid 0.5px rgb(230, 230, 230);
             transition-duration: 0.25s;
         }
 
@@ -195,6 +195,58 @@
             border-left: solid 5px #923336;
             background-color: #dec4c5 !important;
         }
+
+        .table-container {
+            overflow-x: auto;
+            width: 100%;
+            /* Set a specific height for the table container if needed */
+            min-height: 400px; /* Example height; adjust as needed */
+        }
+
+        .wide-cell{
+            min-width: 200px !important;
+            /* height: 50px !important; */
+        }
+
+        td{
+            padding: 0px !important;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #fff;
+            z-index: 1;
+            min-width: 100px !important;
+        }
+
+    
+
+        .sticky-head {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 2;
+        }
+
+        .bg-wanted{
+            background-color: #929292 !important;
+            color: #fff !important;
+        }
+
+        .border-white{
+            border: solid 0.5px white;
+        }
+
+        .hightlight-top-left{
+            background-color: rgb(62, 62, 62) !important;
+            transition-duration: 0.1s !important;
+        }
+
+        .th, td{
+            transition-duration: 0.1s !important;
+        }
+
 
     </style>
 </head>
